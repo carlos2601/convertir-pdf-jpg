@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Convertidor PDF a JPG</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f4f8;
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #222;
+    }
+
+    .upload-container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    label.upload-label {
+      display: block;
+      padding: 1rem;
+      background-color: #0057ff;
+      color: white;
+      text-align: center;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    .preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .preview-item {
+      width: 120px;
+      height: 160px;
+      background: #e3e3e3;
+      border: 2px dashed #bbb;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-item canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+      min-width: 140px;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    button.ready-to-download {
+      background-color: #dc3545 !important;
+    }
+
+    button.ready-to-download:hover {
+      background-color: #c82333 !important;
+    }
+
+    .transparent-disabled {
+      background-color: transparent !important;
+      color: #999 !important;
+      cursor: not-allowed !important;
+      border: 1px dashed #ccc !important;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      .upload-container {
+        padding: 1rem;
+      }
+
+      .preview-item {
+        width: 100px;
+        height: 140px;
+      }
+
+      button {
+        width: 100%;
+        font-size: 15px;
+      }
+
+      .buttons {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="upload-container">
+    <h1>Convertidor PDF a JPG</h1>
+
+    <label for="pdfFiles" class="upload-label">📁 Seleccionar hasta 10 archivos PDF</label>
+    <input type="file" id="pdfFiles" accept="application/pdf" multiple />
+
+    <div class="preview" id="previewContainer"></div>
+
+    <div class="buttons">
+      <button id="convertBtn" disabled>Convertir a JPG</button>
+      <button id="downloadBtn" disabled>Descargar</button>
+    </div>
+  </div>
+
+  <!-- Librerías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <script>
+    const pdfInput = document.getElementById("pdfFiles");
+    const previewContainer = document.getElementById("previewContainer");
+    const convertBtn = document.getElementById("convertBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    let jpgFiles = [];
+
+    pdfInput.addEventListener("change", () => {
+      const files = Array.from(pdfInput.files);
+      previewContainer.innerHTML = "";
+      jpgFiles = [];
+      downloadBtn.classList.remove("ready-to-download");
+      downloadBtn.disabled = true;
+      convertBtn.classList.remove("transparent-disabled");
+
+      if (files.length > 10) {
+        alert("Solo se permiten hasta 10 archivos PDF.");
+        pdfInput.value = "";
+        return;
+      }
+
+      if (files.length > 0) {
+        convertBtn.disabled = false;
+      }
+    });
+
+    convertBtn.addEventListener("click", async () => {
+      jpgFiles = [];
+      previewContainer.innerHTML = "";
+      downloadBtn.classList.remove("ready-to-download");
+
+      for (const file of pdfInput.files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+        const item = document.createElement("div");
+        item.className = "preview-item";
+        item.appendChild(canvas);
+        previewContainer.appendChild(item);
+
+        await new Promise(resolve => {
+          canvas.toBlob(blob => {
+            jpgFiles.push({
+              name: file.name.replace(/\.pdf$/i, ".jpg"),
+              blob: blob
+            });
+            resolve();
+          }, "image/jpeg", 0.9);
+        });
+      }
+
+      // Desactivar y hacer transparente el botón de convertir
+      convertBtn.disabled = true;
+      convertBtn.classList.add("transparent-disabled");
+
+      // Activar botón de descarga y marcarlo en rojo
+      downloadBtn.disabled = false;
+      downloadBtn.classList.add("ready-to-download");
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (jpgFiles.length === 1) {
+        saveAs(jpgFiles[0].blob, jpgFiles[0].name);
+      } else {
+        const zip = new JSZip();
+        jpgFiles.forEach(file => {
+          zip.file(file.name, file.blob);
+        });
+        zip.generateAsync({ type: "blob" }).then(content => {
+          saveAs(content, "imagenes_convertidas.zip");
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
