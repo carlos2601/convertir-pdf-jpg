@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Convertidor PDF a JPG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Convertidor PDF & JPG</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f2f4f8;
+      background: #ffebeb;
       margin: 0;
       padding: 2rem;
       color: #333;
@@ -15,11 +15,11 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 1.5rem;
-      color: #222;
+      margin-bottom: 1rem;
+      color: #000;
     }
 
-    .upload-container {
+    .container {
       max-width: 800px;
       margin: auto;
       background: white;
@@ -28,19 +28,47 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
 
-    input[type="file"] {
+    .mode-select {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-bottom: 2rem;
+    }
+
+    .mode-select button {
+      background-color: #e5322d;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .mode-select button:hover {
+      opacity: 0.8;
+    }
+
+    .upload-section {
       display: none;
     }
 
-    label.upload-label {
+    .upload-label {
       display: block;
       padding: 1rem;
-      background-color: #0057ff;
+      background-color: #e5322d;
       color: white;
       text-align: center;
-      border-radius: 5px;
+      border-radius: 15px;
       cursor: pointer;
       margin-bottom: 1rem;
+      align-self: start;
+      
+    }
+
+    input[type="file"] {
+      display: none;
     }
 
     .preview {
@@ -50,199 +78,345 @@
       justify-content: center;
     }
 
-    .preview-item {
+    .preview-item, .image-preview {
       width: 120px;
       height: 160px;
+      object-fit: contain;
       background: #e3e3e3;
       border: 2px dashed #bbb;
       border-radius: 8px;
-      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-
-    .preview-item canvas {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      font-size: 12px;
+      text-align: center;
+      padding: 0.5rem;
+      overflow: hidden;
     }
 
     .buttons {
       text-align: center;
       margin-top: 2rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
     }
 
-    button {
-      background-color: #28a745;
+    button.action-btn {
       color: white;
       border: none;
       padding: 0.8rem 1.5rem;
+      margin: 0 0.5rem;
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
       transition: background 0.3s;
-      min-width: 140px;
     }
 
-    button:hover {
-      background-color: #218838;
+    #convertPdfBtn {
+      background-color: #0057ff;
     }
 
-    button:disabled {
-      background-color: #ccc;
+    #downloadPdfBtn {
+      background-color: #ddd1d2;
+    }
+
+    #convertJpgBtn {
+      background-color: #0057ff;
+    }
+
+    #downloadJpgBtn {
+      background-color: #e5322d;
+    }
+
+    button.action-btn:disabled {
+      background-color: #ccc !important;
       cursor: not-allowed;
     }
 
-    button.ready-to-download {
-      background-color: #dc3545 !important;
-    }
-
-    button.ready-to-download:hover {
-      background-color: #c82333 !important;
-    }
-
-    .transparent-disabled {
-      background-color: transparent !important;
-      color: #999 !important;
-      cursor: not-allowed !important;
-      border: 1px dashed #ccc !important;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 1rem;
-      }
-
-      .upload-container {
-        padding: 1rem;
-      }
-
-      .preview-item {
-        width: 100px;
-        height: 140px;
-      }
-
-      button {
-        width: 100%;
-        font-size: 15px;
-      }
-
-      .buttons {
+    @media (max-width: 350px) {
+      .mode-select {
         flex-direction: column;
-        align-items: stretch;
       }
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Convertidor PDF & JPG</h1>
 
-  <div class="upload-container">
-    <h1>Convertidor PDF a JPG</h1>
+    <div class="mode-select">
+      <button onclick="selectMode('pdfToJpg')">🔁 PDF a JPG</button>
+      <button onclick="selectMode('jpgToPdf')">🖼️ JPG a PDF</button>
+    </div>
 
-    <label for="pdfFiles" class="upload-label">📁 Seleccionar hasta 10 archivos PDF</label>
-    <input type="file" id="pdfFiles" accept="application/pdf" multiple />
+    <!-- PDF a JPG -->
+    <div id="pdfToJpg" class="upload-section">
+      <label class="upload-label" for="pdfInput">📁 Seleccionar hasta 10 archivos PDF</label>
+      <input type="file" id="pdfInput" accept="application/pdf" multiple />
+      <div class="preview" id="pdfPreview"></div>
+      <div class="buttons">
+        <button class="action-btn" id="convertPdfBtn" disabled>Convertir a JPG</button>
+        <button class="action-btn" id="downloadPdfBtn" disabled>Descargar</button>
+      </div>
+    </div>
 
-    <div class="preview" id="previewContainer"></div>
-
-    <div class="buttons">
-      <button id="convertBtn" disabled>Convertir a JPG</button>
-      <button id="downloadBtn" disabled>Descargar</button>
+    <!-- JPG a PDF -->
+    <div id="jpgToPdf" class="upload-section">
+      <label class="upload-label" for="jpgInput">🖼️ Seleccionar hasta 10 imágenes JPG</label>
+      <input type="file" id="jpgInput" accept="image/jpeg" multiple />
+      <div class="preview" id="jpgPreview"></div>
+      <div class="buttons">
+        <button class="action-btn" id="convertJpgBtn" disabled>Convertir a PDF</button>
+        <button class="action-btn" id="downloadJpgBtn" disabled>Descargar</button>
+      </div>
     </div>
   </div>
 
-  <!-- Librerías -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
   <script>
-    const pdfInput = document.getElementById("pdfFiles");
-    const previewContainer = document.getElementById("previewContainer");
-    const convertBtn = document.getElementById("convertBtn");
-    const downloadBtn = document.getElementById("downloadBtn");
+    const pdfInput = document.getElementById('pdfInput');
+    const jpgInput = document.getElementById('jpgInput');
+    const pdfPreview = document.getElementById('pdfPreview');
+    const jpgPreview = document.getElementById('jpgPreview');
+    const convertPdfBtn = document.getElementById('convertPdfBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const convertJpgBtn = document.getElementById('convertJpgBtn');
+    const downloadJpgBtn = document.getElementById('downloadJpgBtn');
 
-    let jpgFiles = [];
+    let pdfImages = [];
 
-    pdfInput.addEventListener("change", () => {
+    function selectMode(mode) {
+      document.querySelectorAll('.upload-section').forEach(el => el.style.display = 'none');
+      document.getElementById(mode).style.display = 'block';
+    }
+
+    // PDF a JPG
+    pdfInput.addEventListener("change", async () => {
       const files = Array.from(pdfInput.files);
-      previewContainer.innerHTML = "";
-      jpgFiles = [];
-      downloadBtn.classList.remove("ready-to-download");
-      downloadBtn.disabled = true;
-      convertBtn.classList.remove("transparent-disabled");
+      pdfPreview.innerHTML = '';
+      pdfImages = [];
 
       if (files.length > 10) {
-        alert("Solo se permiten hasta 10 archivos PDF.");
-        pdfInput.value = "";
+        alert("Máximo 10 archivos PDF");
+        pdfInput.value = '';
         return;
       }
 
-      if (files.length > 0) {
-        convertBtn.disabled = false;
-      }
-    });
-
-    convertBtn.addEventListener("click", async () => {
-      jpgFiles = [];
-      previewContainer.innerHTML = "";
-      downloadBtn.classList.remove("ready-to-download");
-
-      for (const file of pdfInput.files) {
+      for (const file of files) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 2 });
+        const viewport = page.getViewport({ scale: 1.5 });
         const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        const context = canvas.getContext("2d");
 
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        await page.render({ canvasContext: context, viewport }).promise;
 
-        const item = document.createElement("div");
-        item.className = "preview-item";
-        item.appendChild(canvas);
-        previewContainer.appendChild(item);
+        const imgURL = canvas.toDataURL("image/jpeg");
+        pdfImages.push({ name: file.name.replace(".pdf", ".jpg"), url: imgURL });
 
-        await new Promise(resolve => {
-          canvas.toBlob(blob => {
-            jpgFiles.push({
-              name: file.name.replace(/\.pdf$/i, ".jpg"),
-              blob: blob
-            });
-            resolve();
-          }, "image/jpeg", 0.9);
-        });
+        const imgEl = document.createElement("img");
+        imgEl.src = imgURL;
+        imgEl.className = "image-preview";
+        pdfPreview.appendChild(imgEl);
       }
 
-      // Desactivar y hacer transparente el botón de convertir
-      convertBtn.disabled = true;
-      convertBtn.classList.add("transparent-disabled");
-
-      // Activar botón de descarga y marcarlo en rojo
-      downloadBtn.disabled = false;
-      downloadBtn.classList.add("ready-to-download");
+      convertPdfBtn.disabled = false;
     });
 
-    downloadBtn.addEventListener("click", () => {
-      if (jpgFiles.length === 1) {
-        saveAs(jpgFiles[0].blob, jpgFiles[0].name);
+    convertPdfBtn.addEventListener("click", () => {
+  convertPdfBtn.style.display = "none"; // Oculta el botón después del clic
+  downloadPdfBtn.disabled = false;
+});
+
+
+    downloadPdfBtn.addEventListener("click", async () => {
+      if (pdfImages.length === 1) {
+        const response = await fetch(pdfImages[0].url);
+        const blob = await response.blob();
+        saveAs(blob, pdfImages[0].name);
       } else {
         const zip = new JSZip();
-        jpgFiles.forEach(file => {
-          zip.file(file.name, file.blob);
-        });
-        zip.generateAsync({ type: "blob" }).then(content => {
-          saveAs(content, "imagenes_convertidas.zip");
-        });
+        for (const img of pdfImages) {
+          const res = await fetch(img.url);
+          const blob = await res.blob();
+          zip.file(img.name, blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, "imagenes.zip");
       }
     });
-  </script>
 
+    // JPG a PDF
+    let jpgFiles = [], pdfGenerated = null;
+
+    jpgInput.addEventListener("change", () => {
+      const files = Array.from(jpgInput.files);
+      jpgPreview.innerHTML = '';
+      pdfGenerated = null;
+
+      if (files.length > 10) {
+        alert("Máximo 10 imágenes JPG");
+        jpgInput.value = '';
+        return;
+      }
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = 'image-preview';
+          jpgPreview.appendChild(img);
+        }
+        reader.readAsDataURL(file);
+      });
+
+      convertJpgBtn.disabled = false;
+    });
+
+    convertJpgBtn.addEventListener("click", async () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  const images = jpgPreview.querySelectorAll('img');
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (i > 0) pdf.addPage();
+
+    const imgProps = {
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+    };
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
+
+    const imgWidth = imgProps.width * ratio;
+    const imgHeight = imgProps.height * ratio;
+
+    const x = (pdfWidth - imgWidth) / 2;
+    const y = (pdfHeight - imgHeight) / 2;
+
+    pdf.addImage(img.src, 'JPEG', x, y, imgWidth, imgHeight);
+  }
+
+  pdfGenerated = pdf;
+  downloadJpgBtn.disabled = false;
+  convertJpgBtn.style.display = 'none';
+});
+
+
+    downloadJpgBtn.addEventListener("click", () => {
+      if (pdfGenerated) {
+        pdfGenerated.save("convertido.pdf");
+      }
+    });
+
+    // Efecto visual y bloqueo de botones al seleccionar modo
+function selectMode(mode) {
+  document.querySelectorAll('.upload-section').forEach(el => el.style.display = 'none');
+  document.getElementById(mode).style.display = 'block';
+
+  const buttons = document.querySelectorAll('.mode-select button');
+  buttons.forEach(btn => {
+    if (btn.getAttribute('onclick').includes(mode)) {
+      btn.style.opacity = '1';
+      btn.disabled = false;
+    } else {
+      btn.style.opacity = '0.3';
+      btn.disabled = true;
+    }
+  });
+}
+
+// Muestra porcentaje de carga durante la conversión de PDF a JPG
+
+
+  
+pdfInput.addEventListener("change", async () => {
+  const files = Array.from(pdfInput.files);
+  pdfPreview.innerHTML = '';
+  pdfImages = [];
+
+  if (files.length > 10) {
+    alert("Máximo 10 archivos PDF");
+    pdfInput.value = '';
+    return;
+  }
+
+  let index = 0;
+  for (const file of files) {
+    const container = document.createElement("div");
+    container.className = "preview-item";
+    const progress = document.createElement("div");
+    progress.innerText = "0%";
+    container.appendChild(progress);
+    pdfPreview.appendChild(container);
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const context = canvas.getContext("2d");
+
+    await page.render({
+      canvasContext: context,
+      viewport,
+      continueCallback: (cont) => {
+        let pct = Math.min(100, Math.round((++index / files.length) * 100));
+        progress.innerText = `${pct}%`;
+        cont();
+      }
+    }).promise;
+
+    const imgURL = canvas.toDataURL("image/jpeg");
+    pdfImages.push({ name: file.name.replace(".pdf", ".jpg"), url: imgURL });
+
+    const imgEl = document.createElement("img");
+    imgEl.src = imgURL;
+    imgEl.className = "image-preview";
+
+    container.innerHTML = '';
+    container.appendChild(imgEl);
+    const pctLabel = document.createElement("div");
+    pctLabel.style.fontSize = "12px";
+    pctLabel.style.textAlign = "center";
+    pctLabel.innerText = "100%";
+    container.appendChild(pctLabel);
+  }
+
+  convertPdfBtn.disabled = false;
+});
+// Botones de selección de modo
+const pdfToJpgBtn = document.getElementById("pdfToJpgBtn");
+const jpgToPdfBtn = document.getElementById("jpgToPdfBtn");
+
+// Acción cuando se elige "PDF a JPG"
+pdfToJpgBtn.addEventListener("click", () => {
+  pdfToJpgBtn.style.display = "none"; // Ocultar completamente
+  pdfToJpgBtn.disabled = true;
+  jpgToPdfBtn.style.opacity = "0.3"; // Desactivar el otro botón
+  jpgToPdfBtn.disabled = true;
+});
+
+// Acción cuando se elige "JPG a PDF"
+jpgToPdfBtn.addEventListener("click", () => {
+  jpgToPdfBtn.style.display = "none"; // Ocultar completamente
+  jpgToPdfBtn.disabled = true;
+  pdfToJpgBtn.style.opacity = "0.3"; // Desactivar el otro botón
+  pdfToJpgBtn.disabled = true;
+});
+
+  </script>
 </body>
 </html>
